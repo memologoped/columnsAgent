@@ -1,9 +1,8 @@
 import numpy as np
 
-import col_utils
-
 
 class BaseColumns(object):
+    # constructor of empty columns table filled with zeros
     def __init__(self, depth_columns: list):
         self.depth_columns = depth_columns
 
@@ -13,6 +12,7 @@ class BaseColumns(object):
             table[i] = [0] * self.depth_columns[i]
         self.table = table
 
+    # formatted output columns table
     def __str__(self):
         print("=" * 50)
 
@@ -46,6 +46,7 @@ class SymColumns(BaseColumns):
         super().__str__()
         return ""
 
+    # filling column symbols
     def _fill_col(self):
         for i in range(len(self.table)):
             sym_array = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -70,20 +71,13 @@ class BinColumns(BaseColumns):
         super().__str__()
         return ""
 
-    def true_col(self, pos_arr):
+    # method for checking the result
+    # true letters are denoted by 1 in the matrix consisting of 0 and 1
+    def true_col(self, pos_arr: list):
         for i in range(len(self.table)):
             self.table[i][pos_arr[i]] = 1
 
+    # method for environment
+    # matrix filled with zeros
     def bot_col(self):
         pass
-
-
-class Environment(object):
-    def __init__(self, file):
-        self.text, self.mistakes = col_utils.text_prepare(file)
-        self.depth_col = col_utils.gen_depth(self.text)
-        self.pos_col = col_utils.gen_pos(self.depth_col)
-
-        self.sym_col = SymColumns(self.depth_col, self.pos_col, self.text)
-        self.bin_col = BinColumns(self.depth_col)
-        self.bin_col.true_col(self.pos_col)

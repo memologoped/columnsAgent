@@ -4,6 +4,7 @@ import string
 import numpy as np
 
 
+# text processing
 def get_text(file):
     text = file.readline()
     if not text:
@@ -11,27 +12,25 @@ def get_text(file):
         raise SystemExit
     return text
 
-
-def del_punct(sentence):
+def del_punct(sentence: str):
     sentence = sentence.lower()
     sentence = sentence.translate(str.maketrans('', '', string.punctuation))
     sentence = sentence.replace(" ", "")
     sentence = sentence.rstrip()
     return sentence
 
-
-def gen_sym(length):
+# generation symbol
+def gen_sym(length: int):
     letters = string.ascii_lowercase
     gen_symbol = ''.join((random.choice(letters) for _ in range(length)))
     return gen_symbol
 
-
+# possible mistakes
 def skip_mist(text_list: list, position: int):
     # print(text_list[position], " ", position)
     text_list[position] = ""
 
-
-def insert_mist(text_list: list, position):
+def insert_mist(text_list: list, position: int):
     few_sym = np.random.choice(2, 1, p=[0.99, 0.01])[0]
     if few_sym == 1:
         digits = [2, 3, 4]
@@ -42,12 +41,11 @@ def insert_mist(text_list: list, position):
 
     text_list[position] = text_list[position] + new_symbol
 
-
 def replace_mist(text_list: list, position: int):
     new_symbol = gen_sym(1)
     text_list[position] = new_symbol
 
-
+# possible creation of mistakes
 def poss_mist(text: str):
     mistakes = dict()  # save insert and replace mistakes (without skip mistakes)
     text_list = list(text)
@@ -77,7 +75,7 @@ def poss_mist(text: str):
         mist_text += "".join(text_list[i])
     return mist_text, mistakes
 
-
+# column depth generation
 def gen_depth(text: str):
     depth_array = list()
     depths = np.random.choice(26, 26, replace=False)
@@ -95,8 +93,8 @@ def gen_depth(text: str):
 
     return depth_array
 
-
-def gen_pos(depth_array):
+# generating the position of the correct character
+def gen_pos(depth_array: list):
     pos_array = list()
 
     for k in range(len(depth_array)):
@@ -104,7 +102,7 @@ def gen_pos(depth_array):
 
     return pos_array
 
-
+# result text prepare
 def text_prepare(file):
     text = get_text(file)
     solid_text = del_punct(text)
