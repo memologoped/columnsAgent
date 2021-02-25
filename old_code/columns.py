@@ -1,45 +1,9 @@
 import numpy as np
 
-from columns_gym import envs_utils
-
-
-class Environment(object):
-    def __init__(self, file):
-        """Receive some data for columns generation and rewards politics for estimating actions."""
-        self.true_text, self.mistakes = envs_utils.text_prepare(file)
-
-        depth_col = envs_utils.gen_depth(self.true_text)
-        pos_col = envs_utils.gen_pos(depth_col)
-
-        self.sym_col = SymColumns(depth_col, pos_col, self.true_text)
-
-    def step(self, action=None):
-        """
-        Applies action to the current state and returns new state and reward.
-
-        """
-        pass
-
-
-class EnvironmentState(object):
-
-    def __init__(self, env):
-        self.env = env
-        self.reward = 0
-        self.result = str()
-
-    def is_over(self):
-        if len(self.result) == len(self.env.true_text):
-            return True
-        else:
-            return False
-
-    def show_res(self):
-        return self.result
+import col_utils
 
 
 class BaseColumns(object):
-    # constructor of empty columns table filled with zeros
     def __init__(self, depth_columns: list):
         self.depth_columns = depth_columns
 
@@ -49,7 +13,6 @@ class BaseColumns(object):
             table[i] = [0] * self.depth_columns[i]
         self.table = table
 
-    # formatted output columns table
     def __str__(self):
         print("=" * 50)
 
@@ -83,7 +46,6 @@ class SymColumns(BaseColumns):
         super().__str__()
         return ""
 
-    # filling column symbols
     def _fill_col(self):
         for i in range(len(self.table)):
             sym_array = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -98,3 +60,30 @@ class SymColumns(BaseColumns):
 
             for j in range(len(self.table[i])):
                 self.table[i][j] = rand_sym[j]
+
+
+class BinColumns(BaseColumns):
+    def __init__(self, depth_columns: list):
+        super().__init__(depth_columns)
+
+    def __str__(self):
+        super().__str__()
+        return ""
+
+    def true_col(self, pos_arr):
+        for i in range(len(self.table)):
+            self.table[i][pos_arr[i]] = 1
+
+    def bot_col(self):
+        pass
+
+
+class Environment(object):
+    def __init__(self, file):
+        self.text, self.mistakes = col_utils.text_prepare(file)
+        self.depth_col = col_utils.gen_depth(self.text)
+        self.pos_col = col_utils.gen_pos(self.depth_col)
+
+        self.sym_col = SymColumns(self.depth_col, self.pos_col, self.text)
+        self.bin_col = BinColumns(self.depth_col)
+        self.bin_col.true_col(self.pos_col)

@@ -1,6 +1,6 @@
 import torch
-
-from columns_gym import actions
+from columns_gym import envs
+from exploration_strategies import Base_Exploration_Strategy
 
 
 class BaseAgent(object):
@@ -25,9 +25,11 @@ class BaseAgent(object):
 class RandomAgent(object):
 
     # TODO
-    def take_action(self, env_state):
+    def take_action(self, envs_state):
         """Choose random action depends on env_state."""
-        return actions.ActionsSpace.choose_symbol(env_state)
+        while envs_state.is_not_over:
+            envs_state.state, envs_state.reward = envs_state.envs.step()
+        return envs_state.fin_sentense
 
 
 # TODO implement

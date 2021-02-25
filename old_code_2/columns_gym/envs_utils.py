@@ -12,7 +12,6 @@ def get_text(file):
         raise SystemExit
     return text
 
-
 def del_punct(sentence: str):
     sentence = sentence.lower()
     sentence = sentence.translate(str.maketrans('', '', string.punctuation))
@@ -20,19 +19,16 @@ def del_punct(sentence: str):
     sentence = sentence.rstrip()
     return sentence
 
-
 # generation symbol
 def gen_sym(length: int):
     letters = string.ascii_lowercase
     gen_symbol = ''.join((random.choice(letters) for _ in range(length)))
     return gen_symbol
 
-
 # possible mistakes
 def skip_mist(text_list: list, position: int):
     # print(text_list[position], " ", position)
     text_list[position] = ""
-
 
 def insert_mist(text_list: list, position: int):
     few_sym = np.random.choice(2, 1, p=[0.99, 0.01])[0]
@@ -45,11 +41,9 @@ def insert_mist(text_list: list, position: int):
 
     text_list[position] = text_list[position] + new_symbol
 
-
 def replace_mist(text_list: list, position: int):
     new_symbol = gen_sym(1)
     text_list[position] = new_symbol
-
 
 # possible creation of mistakes
 def poss_mist(text: str):
@@ -81,7 +75,6 @@ def poss_mist(text: str):
         mist_text += "".join(text_list[i])
     return mist_text, mistakes
 
-
 # column depth generation
 def gen_depth(text: str):
     depth_array = list()
@@ -100,7 +93,6 @@ def gen_depth(text: str):
 
     return depth_array
 
-
 # generating the position of the correct character
 def gen_pos(depth_array: list):
     pos_array = list()
@@ -109,7 +101,6 @@ def gen_pos(depth_array: list):
         pos_array.append((np.random.choice(depth_array[k], 1))[0])
 
     return pos_array
-
 
 # result text prepare
 def text_prepare(file):
