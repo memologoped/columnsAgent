@@ -3,15 +3,18 @@ import numpy as np
 from columns_gym import envs_utils
 
 
+# TODO объеденить класс EnvironmentState и Environment в один
+
 class Environment(object):
     def __init__(self, file):
         """Receive some data for columns generation and rewards politics for estimating actions."""
+
         self.true_text, self.mistakes = envs_utils.text_prepare(file)
 
-        depth_col = envs_utils.gen_depth(self.true_text)
-        pos_col = envs_utils.gen_pos(depth_col)
+        col_depth = envs_utils.gen_depth(self.true_text)
+        pos_col = envs_utils.gen_pos(col_depth)
 
-        self.sym_col = SymColumns(depth_col, pos_col, self.true_text)
+        self.sym_col = SymColumns(col_depth, pos_col, self.true_text)
 
     def step(self, action=None):
         """
@@ -28,11 +31,8 @@ class EnvironmentState(object):
         self.reward = 0
         self.result = str()
 
-    def is_over(self):
-        if len(self.result) == len(self.env.true_text):
-            return True
-        else:
-            return False
+    def is_over(self) -> bool:
+        return len(self.result) == len(self.env.true_text)
 
     def show_res(self):
         return self.result
@@ -71,7 +71,7 @@ class BaseColumns(object):
 class SymColumns(BaseColumns):
     def __init__(self, depth_columns: list, position_array: list, text: str):
         super().__init__(depth_columns)
-        assert len(self.depth_columns) == len(position_array), "Size error 1"
+        assert len(self.depth_columns) == len(position_array), "Size error 1"  # TODO очень информативно ...
         assert len(text) == len(self.depth_columns), "Size error 2"
 
         self.text = text
