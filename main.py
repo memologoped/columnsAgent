@@ -1,38 +1,52 @@
-from agents import bot
-from columns_gym import envs
+import os
+
+import torch
+from torch.utils.data import DataLoader
+from data_reader import PileData, collate_fn_pad
+from model import Net
+
+# Define hyper-parameters
+batch_size = 4
+num_workers = 4
+embedding_size = 27
+sentence_max_len = 150
+dropout = 0.1
+num_encoder_layers = 6
+num_decoder_layers = 6
+head = 3
+size_ff_net = 100
 
 
-def main():
-    with open("examples/meaningful_text.txt", mode="r", encoding="utf-8") as file:
-        environment = envs.Environment(file)
-    environment_state = envs.EnvironmentState(environment)
+# Device configuration
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    agent = bot.RandomAgent()
+# Train data prepare
+train_dir = ".\\data"
+train_files = os.listdir(train_dir)
+train_files = [os.path.join(train_dir, str(el)) for el in train_files]
 
-    while not environment_state.is_over():
-        environment_state = agent.take_action(environment_state)
+train_dataset = PileData(train_files)
 
-    result = environment_state.show_res()
-    print("Result: ", result)
+train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, num_workers=num_workers,
+                          pin_memory=True, drop_last=True, collate_fn=collate_fn_pad)
+
+# Test data prepare
+test_dir = ".\\data"
+test_files = os.listdir(test_dir)
+test_files = [os.path.join(test_dir, str(el)) for el in test_files]
+
+test_dataset = PileData(test_files)
+
+test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, num_workers=num_workers,
+                         pin_memory=True, drop_last=True, collate_fn=collate_fn_pad)
+
+model = Net(embedding_size, size_ff_net, num_encoder_layers, num_decoder_layers, head)
+
+
+def train():
+    for train_data, target in train_loader:
+        output = model(train_data)
 
 
 if __name__ == '__main__':
-    main()
-
-
-# TODO check thar error
-"""
-
-Traceback (most recent call last):
-  File "columnsAgent/main.py", line 20, in <module>
-    main()
-  File "columnsAgent/main.py", line 13, in main
-    environment_state = agent.take_action(environment_state)
-  File "columnsAgent/agents/bot.py", line 43, in take_action
-    return self.choose_symbol(env_state)
-  File "columnsAgent/agents/bot.py", line 67, in choose_symbol
-    top_2 = list(np.random.choice(sym_col[last_col + 1],
-  File "mtrand.pyx", line 954, in numpy.random.mtrand.RandomState.choice
-ValueError: Cannot take a larger sample than population when 'replace=False'
-
-"""
+    train()

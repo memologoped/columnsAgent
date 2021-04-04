@@ -30,11 +30,16 @@ def collate_fn_pad(batch):
 
     for i in range(len(train_data)):
         for j in range(len(train_data[i])):
-            train_column = np.random.choice(2, 27, replace=True).tolist()
-            train_column[train_data[i][j]] = 1
-            train_data[i][j] = train_column
+            if train_data[i][j] == 0:
+                train_column = [0 for _ in range(27)]
+                train_column[train_data[i][j]] = 1
+                train_data[i][j] = train_column
+            else:
+                train_column = np.random.choice(2, 27, replace=True).tolist()
+                train_column[train_data[i][j]] = 1
+                train_data[i][j] = train_column
 
-    return torch.tensor(train_data), torch.tensor(target)
+    return torch.tensor(train_data, dtype=float), torch.tensor(target, dtype=float)
 
 
 class PileData(Dataset):
