@@ -1,2 +1,0 @@
-class ActionsSpace(object):
-    pass
