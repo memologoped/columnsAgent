@@ -79,7 +79,11 @@ class PileData(Dataset):
 
     def __text_prepare(self, text: str):
         sentence = str()
-        for line in text.split("\n\n"):
+        save = str()
+        while save != text:
+            save = text
+            text = text.replace("nn", "n")
+        for line in text.split("\n"):
             if len(line) > self.threshold:
                 sentence += line
         cleaned_sentence = re.sub(r'[^A-Za-z]', '', sentence)
