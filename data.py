@@ -21,32 +21,52 @@ class Collate(object):
     def __call__(self, batch: list) -> torch.tensor:
         batch = [list(entry) for entry in batch]
         sizes = [len(entry) for entry in batch]
-        max_len = max(sizes)
-        tensor_shape = (len(batch), max_len, len(self.alphabet_to_num))
+        batch_size, seq_len, token_size = len(batch), max(sizes), len(self.alphabet_to_num)
 
-        numeric_batch = torch.zeros(tensor_shape, dtype=torch.float32)
-        target = torch.zeros(tensor_shape, dtype=torch.float32)
-        padding_mask = torch.zeros(tensor_shape[:-1], dtype=torch.bool)
+        src = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float)
+        tgt_inp = torch.zeros((batch_size, seq_len, token_size), dtype=torch.float)
+        tgt = list()
+        padding_mask = torch.zeros((batch_size, seq_len), dtype=torch.bool)
 
         for i in range(len(batch)):
+
+            # i_tgt = torch.zeros(seq_len, dtype=torch.long)
+            i_tgt = torch.full((seq_len,), fill_value=-1, dtype=torch.long)
+
             for j in range(len(batch[i])):
-                numeric_batch[i, j, self.alphabet_to_num[batch[i][j]]] = 1
-                target[i, j, self.alphabet_to_num[batch[i][j]]] = 1
+                num_repr = self.alphabet_to_num[batch[i][j]]
+
+                src[i, j, num_repr] = 1
+                tgt_inp[i, j, num_repr] = 1
+                i_tgt[j] = num_repr
 
                 noise_size = np.random.randint(low=0, high=self.max_noise, size=1)[0]
                 noise_indexes = np.random.randint(low=0, high=len(self.alphabet_to_num), size=noise_size)
 
-                numeric_batch[i, j, noise_indexes] = 1
+                src[i, j, noise_indexes] = 1
 
+            tgt.append(i_tgt)
             padding_mask[i, sizes[i]:] = True
 
-        return numeric_batch, target, padding_mask
+        empty_token = torch.zeros(batch_size, 1, token_size)
+        src = torch.cat([empty_token, src[:, :-1, :]], dim=1)
+        tgt_inp = torch.cat([empty_token, tgt_inp[:, :-1, :]], dim=1)
+
+        src = src.transpose(0, 1)
+        tgt_inp = tgt_inp.transpose(0, 1)
+        tgt = torch.cat(tgt)
+
+        return src, tgt_inp, tgt, padding_mask, padding_mask, self.get_subsequent_mask(seq_len)
+
+    @staticmethod
+    def get_subsequent_mask(size: int) -> torch.tensor:
+        return torch.triu(torch.ones((size, size), dtype=torch.float), diagonal=1) == 1
 
 
 class WikiDataset(Dataset):
 
     def __init__(self, filenames: list, min_threshold: int = 150, max_threshold: int = 200,
-                 drop_threshold: float = 0.62, dataset_size: int = 10_000):
+                 drop_threshold: float = 0.62, dataset_size: int = 16_384):
         self.filenames = filenames
         self.n_files = len(self.filenames)
         self.file_sizes = [getsize(file) for file in self.filenames]
@@ -87,18 +107,17 @@ class WikiDataset(Dataset):
         return self.dataset_size
 
 
-def main():
+if __name__ == '__main__':
     train_files = [join(config.data_path, file) for file in listdir(config.data_path)]
-    dataset = WikiDataset(train_files)
+    dataset = WikiDataset(train_files, min_threshold=5, max_threshold=10)
 
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    loader = DataLoader(dataset=dataset, batch_size=16, shuffle=False, num_workers=2, pin_memory=True,
+    loader = DataLoader(dataset=dataset, batch_size=2, shuffle=False, num_workers=2, pin_memory=True,
                         collate_fn=Collate(max_noise=8))
 
-    for data, target, mask in loader:
-        print(data.size())
-
-
-if __name__ == '__main__':
-    main()
+    for _src, _tgt_inp, _tgt, _src_pad_mask, _tgt_inp_pad_mask, _tgt_inp_attn_mask in loader:
+        print(f'| src: {_src.size()} '
+              f'| tgt_inp: {_tgt_inp.size()} '
+              f'| tgt: {_tgt.size()} '
+              f'| src_pad_mask: {_src_pad_mask.size()} '
+              f'| tgt_inp_pad_mask: {_tgt_inp_pad_mask.size()} '
+              f'| tgt_inp_attn_mask: {_tgt_inp_attn_mask.size()}')
