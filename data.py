@@ -81,12 +81,10 @@ class WikiDataset(Dataset):
         line_size = np.random.randint(low=self.min_threshold, high=self.max_threshold, size=1)[0]
 
         try:
-
             with open(self.filenames[file_id], mode="rb") as f:
-                stream = ZstdDecompressor().stream_reader(f, read_size=int(shift + line_size))
-                stream.seek(shift)
-
-                wiki_page = stream.read(line_size)
+                with ZstdDecompressor().stream_reader(f) as reader:
+                    reader.seek(shift)
+                    wiki_page = reader.read(line_size)
 
             sentence = wiki_page.decode("unicode_escape", errors='ignore')
 
@@ -108,8 +106,8 @@ class WikiDataset(Dataset):
 
 
 if __name__ == '__main__':
-    train_files = [join(config.data_path, file) for file in listdir(config.data_path)]
-    dataset = WikiDataset(train_files, min_threshold=5, max_threshold=10)
+    train_files = [join(config.train_path, file) for file in listdir(config.train_path)]
+    dataset = WikiDataset(train_files, min_threshold=199, max_threshold=200)
 
     loader = DataLoader(dataset=dataset, batch_size=2, shuffle=False, num_workers=2, pin_memory=True,
                         collate_fn=Collate(max_noise=8))
