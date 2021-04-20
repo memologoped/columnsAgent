@@ -122,10 +122,10 @@ def train() -> None:
     # ---------------------------------------------DATA PARAMETERS------------------------------------------------------
     train_files = [join(config.train_path, file) for file in listdir(config.train_path)]
     test_files = [join(config.test_path, file) for file in listdir(config.test_path)]
-    min_threshold = 150
+    min_threshold = 199
     max_threshold = 200
-    train_dataset_size = 4096
-    test_dataset_size = 256
+    train_dataset_size = 8000
+    test_dataset_size = 64
     vis_dataset_size = 8
     num_workers = 5
     max_noise = 8
@@ -138,10 +138,10 @@ def train() -> None:
     n_heads = 8
     d_ff = 2048
     dropout = 0.2
-    pre_trained = False
+    pre_trained = True
     # -----------------------------------------OPTIMIZATION PARAMETERS--------------------------------------------------
     criterion = CrossEntropyLoss(ignore_index=-1)
-    lr = 5.0
+    lr = 0.0001  # 5.0
     lr_step_size = 1
     gamma = 0.95
     # ------------------------------------------TRAIN LOOP PARAMETERS---------------------------------------------------
@@ -174,7 +174,7 @@ def train() -> None:
                        d_model=d_model, n_heads=n_heads, d_ff=d_ff, dropout=dropout).to(device)
 
     if pre_trained:
-        z_reader.load_parameters(join(config.weights_path, '0418_2043_3'), device=device)
+        z_reader.load_parameters(join(config.weights_path, '0420_1353_33'), device=device)
 
     optimizer = torch.optim.SGD(z_reader.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step_size, gamma=gamma)
