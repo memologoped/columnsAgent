@@ -198,6 +198,9 @@ def train() -> None:
 
     except KeyboardInterrupt:
         print('Interrupted')
+        
+        if input('Save model? ') == 'y':
+            save_parameters(-1, z_reader)
 
 
 if __name__ == '__main__':
