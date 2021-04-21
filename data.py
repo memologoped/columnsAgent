@@ -63,7 +63,7 @@ class Collate(object):
         return torch.triu(torch.ones((size, size), dtype=torch.float), diagonal=1) == 1
 
 
-class WikiDataset(Dataset):
+class PileDataset(Dataset):
 
     def __init__(self, filenames: list, min_threshold: int = 150, max_threshold: int = 200,
                  drop_threshold: float = 0.62, dataset_size: int = 16_384):
@@ -105,11 +105,63 @@ class WikiDataset(Dataset):
         return self.dataset_size
 
 
+class WikiDataset(Dataset):
+
+    def __init__(self, filenames: list, min_threshold: int = 150, max_threshold: int = 200, dataset_size: int = 16_384):
+        self.filenames = filenames
+        self.n_files = len(self.filenames)
+        self.file_sizes = [getsize(file) for file in self.filenames]
+        self.min_threshold = min_threshold
+        self.max_threshold = max_threshold
+        self.dataset_size = dataset_size
+
+    def __getitem__(self, idx=None):
+        file_id = np.random.randint(low=0, high=self.n_files, size=1)[0]
+        shift = np.random.randint(low=0, high=self.file_sizes[file_id] - self.max_threshold, size=1)[0]
+        line_size = np.random.randint(low=self.min_threshold, high=self.max_threshold, size=1)[0]
+
+        with open(self.filenames[file_id], mode="r") as f:
+            f.seek(shift)
+
+            return f.read(line_size)
+
+    def __len__(self):
+        return self.dataset_size
+
+
+def clean_wiki_text(filename: str, drop_threshold: float = 0.62) -> None:
+    result_size = 0
+
+    with open(filename, mode='r') as wiki_file, open(f'{filename}.clean', mode='w') as writer:
+
+        while True:
+            try:
+                line = wiki_file.readline()
+            except UnicodeDecodeError:
+                continue
+
+            if not line:
+                break
+
+            if not line.strip() or line.startswith(' = '):
+                continue
+
+            cleaned_line = re.sub(r'[^A-Za-z]', '', line)
+
+            if len(cleaned_line) / len(line) < drop_threshold:
+                continue
+
+            writer.write(cleaned_line.lower())
+            result_size += len(cleaned_line)
+
+    print(f'Result size: {result_size}')
+
+
 if __name__ == '__main__':
     train_files = [join(config.train_path, file) for file in listdir(config.train_path)]
     dataset = WikiDataset(train_files, min_threshold=199, max_threshold=200)
 
-    loader = DataLoader(dataset=dataset, batch_size=2, shuffle=False, num_workers=2, pin_memory=True,
+    loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_workers=4, pin_memory=True,
                         collate_fn=Collate(max_noise=8))
 
     for _src, _tgt_inp, _tgt, _src_pad_mask, _tgt_inp_pad_mask, _tgt_inp_attn_mask in loader:
