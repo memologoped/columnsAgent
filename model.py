@@ -19,22 +19,15 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, d_model)
         pe[:, 0::2] = torch.sin(x)
         pe[:, 1::2] = torch.cos(x)
-<<<<<<< HEAD
-        print()
-=======
->>>>>>> 7a3555408b8b6280d12240c956587846a5f25624
+
         pe = pe.unsqueeze(0).transpose(0, 1)
 
         self.register_buffer('pe', pe)
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-<<<<<<< HEAD
         for i in range(x.size(1)):
             for j in range(x.size(0)):
                 x[j, i] += self.pe[i, 0]
-=======
-        x = x + self.pe[:x.size(0), :]
->>>>>>> 7a3555408b8b6280d12240c956587846a5f25624
 
         return self.dropout(x)
 
