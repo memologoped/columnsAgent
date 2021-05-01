@@ -17,7 +17,6 @@ class Collate(object):
 
     num_to_alphabet = dict((v, k) for k, v in alphabet_to_num.items())
 
-
     def __init__(self, max_noise: int = 8):
         self.max_noise = max_noise % len(self.alphabet_to_num)
 
@@ -57,7 +56,6 @@ class Collate(object):
 
         src = src.transpose(0, 1)
         tgt_inp = tgt_inp.transpose(0, 1)
-
         tgt = torch.stack(tgt)
         tgt = tgt.transpose(0, 1).reshape(-1)
 
@@ -127,8 +125,9 @@ class WikiDataset(Dataset):
 
         with open(self.filenames[file_id], mode="r") as f:
             f.seek(shift)
+            text = f.read(line_size)
 
-            return f.read(line_size)
+            return text
 
     def __len__(self):
         return self.dataset_size
