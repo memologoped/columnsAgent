@@ -15,7 +15,11 @@ class Collate(object):
                        'l': 11, 'm': 12, 'n': 13, 'o': 14, 'p': 15, 'q': 16, 'r': 17, 's': 18, 't': 19, 'v': 20,
                        'u': 21, 'w': 22, 'x': 23, 'y': 24, 'z': 25}
 
+<<<<<<< HEAD
     num_to_alphabet = dict((v, k) for k, v in alphabet_to_num.items())
+=======
+    num_to_alphabet = res = dict((v, k) for k, v in alphabet_to_num.items())
+>>>>>>> 7a3555408b8b6280d12240c956587846a5f25624
 
     def __init__(self, max_noise: int = 8):
         self.max_noise = max_noise % len(self.alphabet_to_num)
@@ -56,8 +60,17 @@ class Collate(object):
 
         src = src.transpose(0, 1)
         tgt_inp = tgt_inp.transpose(0, 1)
+<<<<<<< HEAD
         tgt = torch.stack(tgt)
         tgt = tgt.transpose(0, 1).reshape(-1)
+=======
+
+        res_tgt = list()
+        for i in range(seq_len):
+            for t in tgt:
+                res_tgt.append(t[i].item())
+        tgt = torch.tensor(res_tgt)
+>>>>>>> 7a3555408b8b6280d12240c956587846a5f25624
 
         return src, tgt_inp, tgt, padding_mask, padding_mask, self.get_subsequent_mask(seq_len)
 
@@ -125,9 +138,14 @@ class WikiDataset(Dataset):
 
         with open(self.filenames[file_id], mode="r") as f:
             f.seek(shift)
+<<<<<<< HEAD
             text = f.read(line_size)
 
             return text
+=======
+
+            return f.read(line_size)
+>>>>>>> 7a3555408b8b6280d12240c956587846a5f25624
 
     def __len__(self):
         return self.dataset_size
