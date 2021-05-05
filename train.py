@@ -130,8 +130,8 @@ def train() -> None:
     min_threshold = 200
     max_threshold = 201
     train_dataset_size = 8000
-    test_dataset_size = 64
-    vis_dataset_size = 8
+    test_dataset_size = 80
+    vis_dataset_size = 40
     num_workers = 5
     min_noise = 0
     max_noise = 8
