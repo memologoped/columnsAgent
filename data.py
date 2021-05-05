@@ -17,7 +17,8 @@ class Collate(object):
 
     num_to_alphabet = dict((v, k) for k, v in alphabet_to_num.items())
 
-    def __init__(self, max_noise: int = 8):
+    def __init__(self, min_noise: int, max_noise: int):
+        self.min_noise = max(0, min_noise)
         self.max_noise = max_noise % len(self.alphabet_to_num)
 
     def __call__(self, batch: list) -> torch.tensor:
@@ -32,7 +33,6 @@ class Collate(object):
 
         for i in range(len(batch)):
 
-            # i_tgt = torch.zeros(seq_len, dtype=torch.long)
             i_tgt = torch.full((seq_len,), fill_value=-1, dtype=torch.long)
 
             for j in range(len(batch[i])):
@@ -42,7 +42,7 @@ class Collate(object):
                 tgt_inp[i, j, num_repr] = 1
                 i_tgt[j] = num_repr
 
-                noise_size = np.random.randint(low=0, high=self.max_noise, size=1)[0]
+                noise_size = np.random.randint(low=self.min_noise, high=self.max_noise, size=1)[0]
                 noise_indexes = np.random.randint(low=0, high=len(self.alphabet_to_num), size=noise_size)
 
                 src[i, j, noise_indexes] = 1
@@ -51,15 +51,11 @@ class Collate(object):
             padding_mask[i, sizes[i]:] = True
 
         empty_token = torch.zeros(batch_size, 1, token_size)
-        src = torch.cat([empty_token, src[:, :-1, :]], dim=1)
         tgt_inp = torch.cat([empty_token, tgt_inp[:, :-1, :]], dim=1)
-
-        src = src.transpose(0, 1)
-        tgt_inp = tgt_inp.transpose(0, 1)
         tgt = torch.stack(tgt)
-        tgt = tgt.transpose(0, 1).reshape(-1)
+        subsequent_mask = self.get_subsequent_mask(seq_len)
 
-        return src, tgt_inp, tgt, padding_mask, padding_mask, self.get_subsequent_mask(seq_len)
+        return src, tgt_inp, tgt, padding_mask, padding_mask, subsequent_mask
 
     @staticmethod
     def get_subsequent_mask(size: int) -> torch.tensor:
@@ -119,15 +115,16 @@ class WikiDataset(Dataset):
         self.dataset_size = dataset_size
 
     def __getitem__(self, idx=None):
+        np.random.seed(None)
+
         file_id = np.random.randint(low=0, high=self.n_files, size=1)[0]
         shift = np.random.randint(low=0, high=self.file_sizes[file_id] - self.max_threshold, size=1)[0]
         line_size = np.random.randint(low=self.min_threshold, high=self.max_threshold, size=1)[0]
 
         with open(self.filenames[file_id], mode="r") as f:
             f.seek(shift)
-            text = f.read(line_size)
 
-            return text
+            return f.read(line_size)
 
     def __len__(self):
         return self.dataset_size

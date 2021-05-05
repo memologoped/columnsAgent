@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from os import listdir
 from os.path import join
-from time import time, sleep
+from time import time
 
 import torch
 from torch.nn import CrossEntropyLoss
@@ -30,15 +30,14 @@ def epoch_training(offset: int, z_reader: ZReader, train_loader: DataLoader, opt
         tgt_pad_mask = tgt_pad_mask.to(device)
         tgt_attn_mask = tgt_attn_mask.to(device)
 
-        optimizer.zero_grad()
-
         tgt_out = z_reader(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-        tgt_out = tgt_out.view(-1, z_reader.token_size)
+        tgt_out = tgt_out.reshape(-1, z_reader.token_size)
+        tgt = tgt.view(-1)
 
         loss = criterion(tgt_out, tgt)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(z_reader.parameters(), max_norm=0.5)
         optimizer.step()
+        optimizer.zero_grad()
 
         if printable and (offset + batch_idx) % log_interval == 0:
             accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)
@@ -127,15 +126,15 @@ def train() -> None:
     # ---------------------------------------------DATA PARAMETERS------------------------------------------------------
     train_files = [join(config.train_path, file) for file in listdir(config.train_path)]
     test_files = [join(config.test_path, file) for file in listdir(config.test_path)]
-    min_threshold = 199
-    max_threshold = 200
+    min_threshold = 200
+    max_threshold = 201
     train_dataset_size = 8000
     test_dataset_size = 64
     vis_dataset_size = 8
     num_workers = 5
+    min_noise = 0
     max_noise = 8
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
     # --------------------------------------------MODEL PARAMETERS------------------------------------------------------
     token_size = len(Collate.alphabet_to_num)
     pe_max_len = 1000
@@ -143,16 +142,16 @@ def train() -> None:
     d_model = 512  # d_model % n_heads = 0
     n_heads = 8
     d_ff = 2048
-    dropout = 0.2
+    dropout = 0.1
     pre_trained = False  # fixed by myself
     # -----------------------------------------OPTIMIZATION PARAMETERS--------------------------------------------------
     criterion = CrossEntropyLoss(ignore_index=-1)
-    lr = 0.01  # 5.0
+    lr = 0.001  # 5.0
     lr_step_size = 1
     gamma = 0.95
     # ------------------------------------------TRAIN LOOP PARAMETERS---------------------------------------------------
     n_epochs = 100_000
-    batch_size = 40
+    batch_size = 8
     saving_interval = 1
     log_interval = 1
     vis_interval = 1
@@ -167,7 +166,7 @@ def train() -> None:
     vis_dataset = WikiDataset(filenames=test_files, min_threshold=min_threshold, max_threshold=max_threshold,
                               dataset_size=vis_dataset_size)
 
-    collate_fn = Collate(max_noise=max_noise)
+    collate_fn = Collate(min_noise=min_noise, max_noise=max_noise)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers,
                               pin_memory=True, collate_fn=collate_fn)
@@ -192,10 +191,10 @@ def train() -> None:
             epoch_training(offset, z_reader, train_loader, optimizer, scheduler, device, log_interval, criterion,
                            printable=train_printable)
 
-            epoch_testing(offset, z_reader, test_loader, device, criterion, printable=test_printable)
+            # epoch_testing(offset, z_reader, test_loader, device, criterion, printable=test_printable)
 
-            if epoch_idx % vis_interval == 0:
-                epoch_visualization(offset, z_reader, vis_loader, device)
+            # if epoch_idx % vis_interval == 0:
+            #     epoch_visualization(offset, z_reader, vis_loader, device)
 
             if epoch_idx % saving_interval == 0:
                 save_parameters(epoch_idx, z_reader)

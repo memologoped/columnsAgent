@@ -60,6 +60,9 @@ class ZReader(nn.Module):
     def forward(self, src: torch.tensor, src_pad_mask: torch.tensor,
                 tgt_inp: torch.tensor, tgt_attn_mask: torch.tensor, tgt_pad_mask: torch.tensor) -> torch.tensor:
 
+        src = src.transpose(0, 1)
+        tgt_inp = tgt_inp.transpose(0, 1)
+
         src = F.relu(self.mapping(src)) * self.scale
         src = self.pe(src)
 
@@ -71,7 +74,7 @@ class ZReader(nn.Module):
         decoded = self.decoder(tgt=tgt_inp, memory=encoded_src, tgt_mask=tgt_attn_mask,
                                tgt_key_padding_mask=tgt_pad_mask, memory_key_padding_mask=src_pad_mask)
 
-        return self.inv_mapping(decoded)
+        return self.inv_mapping(decoded).transpose(0, 1)
 
     def save_parameters(self, filename: str) -> None:
         torch.save(self.state_dict(), filename)
