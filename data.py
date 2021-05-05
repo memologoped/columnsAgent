@@ -91,10 +91,8 @@ class PileDataset(Dataset):
             cleaned_sentence = re.sub(r'[^A-Za-z]', '', sentence)
 
             if len(sentence) == 0 or len(cleaned_sentence) / len(sentence) < self.drop_threshold:
-                # print('drop_threshold', len(cleaned_sentence) / len(sentence), sentence)
                 return self.__getitem__()
 
-            # print(sentence)
             return cleaned_sentence.lower()
 
         except EOFError:

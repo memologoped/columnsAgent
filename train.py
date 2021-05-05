@@ -70,7 +70,8 @@ def epoch_testing(offset: int, z_reader: ZReader, test_loader: DataLoader, devic
             tgt_attn_mask = tgt_attn_mask.to(device)
 
             tgt_out = z_reader(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
-            tgt_out = tgt_out.view(-1, z_reader.token_size)
+            tgt_out = tgt_out.reshape(-1, z_reader.token_size)
+            tgt = tgt.view(-1)
 
             loss = criterion(tgt_out, tgt).item()
             accuracy = (torch.argmax(tgt_out, dim=1) == tgt).float().sum() / tgt.size(0)
@@ -105,10 +106,10 @@ def epoch_visualization(offset: int, z_reader: ZReader, vis_loader: DataLoader, 
 
             tgt_out = z_reader(src, src_pad_mask, tgt_inp, tgt_attn_mask, tgt_pad_mask)
 
-            for i in range(0, tgt_out.shape[1]):
+            for i in range(0, tgt_out.shape[0]):
                 sent = ""
-                for j in range(0, len(tgt_out)):
-                    pos = torch.argmax(tgt_out[j][i]).item()
+                for j in range(0, tgt_out.shape[1]):
+                    pos = torch.argmax(tgt_out[i][j]).item()
                     sent += Collate.num_to_alphabet[pos]
                 print(sent)
 
@@ -143,15 +144,15 @@ def train() -> None:
     n_heads = 8
     d_ff = 2048
     dropout = 0.1
-    pre_trained = False  # fixed by myself
+    pre_trained = False
     # -----------------------------------------OPTIMIZATION PARAMETERS--------------------------------------------------
     criterion = CrossEntropyLoss(ignore_index=-1)
-    lr = 0.001  # 5.0
+    lr = 0.001
     lr_step_size = 1
     gamma = 0.95
     # ------------------------------------------TRAIN LOOP PARAMETERS---------------------------------------------------
     n_epochs = 100_000
-    batch_size = 8
+    batch_size = 40
     saving_interval = 1
     log_interval = 1
     vis_interval = 1
@@ -181,7 +182,7 @@ def train() -> None:
     if pre_trained:
         z_reader.load_parameters(join(config.weights_path, '0420_1353_33'), device=device)
 
-    optimizer = torch.optim.SGD(z_reader.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(z_reader.parameters(), lr=lr)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step_size, gamma=gamma)
 
     try:
@@ -191,10 +192,10 @@ def train() -> None:
             epoch_training(offset, z_reader, train_loader, optimizer, scheduler, device, log_interval, criterion,
                            printable=train_printable)
 
-            # epoch_testing(offset, z_reader, test_loader, device, criterion, printable=test_printable)
+            epoch_testing(offset, z_reader, test_loader, device, criterion, printable=test_printable)
 
-            # if epoch_idx % vis_interval == 0:
-            #     epoch_visualization(offset, z_reader, vis_loader, device)
+            if epoch_idx % vis_interval == 0:
+                epoch_visualization(offset, z_reader, vis_loader, device)
 
             if epoch_idx % saving_interval == 0:
                 save_parameters(epoch_idx, z_reader)
