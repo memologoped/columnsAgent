@@ -5,3 +5,4 @@ train_path = join(data_path, 'train')
 validation_path = join(data_path, 'validation')
 test_path = join(data_path, 'test')
 weights_path = '.\\weights'
+checkpoint_path = '.\\checkpoint\\checkpoint.txt'

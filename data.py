@@ -158,15 +158,22 @@ def clean_wiki_text(filename: str, drop_threshold: float = 0.62) -> None:
 
 if __name__ == '__main__':
     train_files = [join(config.train_path, file) for file in listdir(config.train_path)]
-    dataset = WikiDataset(train_files, min_threshold=199, max_threshold=200)
+    dataset = WikiDataset(train_files, min_threshold=10, max_threshold=11)
 
-    loader = DataLoader(dataset=dataset, batch_size=1, shuffle=False, num_workers=4, pin_memory=True,
-                        collate_fn=Collate(max_noise=8))
+    loader = DataLoader(dataset=dataset, batch_size=2, shuffle=False, num_workers=4, pin_memory=True,
+                        collate_fn=Collate(min_noise=0, max_noise=8))
 
     for _src, _tgt_inp, _tgt, _src_pad_mask, _tgt_inp_pad_mask, _tgt_inp_attn_mask in loader:
-        print(f'| src: {_src.size()} '
-              f'| tgt_inp: {_tgt_inp.size()} '
-              f'| tgt: {_tgt.size()} '
-              f'| src_pad_mask: {_src_pad_mask.size()} '
-              f'| tgt_inp_pad_mask: {_tgt_inp_pad_mask.size()} '
-              f'| tgt_inp_attn_mask: {_tgt_inp_attn_mask.size()}')
+        # print(f'| src: {_src.size()} '
+        #       f'| tgt_inp: {_tgt_inp.size()} '
+        #       f'| tgt: {_tgt.size()} '
+        #       f'| src_pad_mask: {_src_pad_mask.size()} '
+        #       f'| tgt_inp_pad_mask: {_tgt_inp_pad_mask.size()} '
+        #       f'| tgt_inp_attn_mask: {_tgt_inp_attn_mask.size()}')
+
+        print(f'| src: {_src} '
+              f'| tgt_inp: {_tgt_inp} '
+              f'| tgt: {_tgt} '
+              f'| src_pad_mask: {_src_pad_mask} '
+              f'| tgt_inp_pad_mask: {_tgt_inp_pad_mask} '
+              f'| tgt_inp_attn_mask: {_tgt_inp_attn_mask}')
